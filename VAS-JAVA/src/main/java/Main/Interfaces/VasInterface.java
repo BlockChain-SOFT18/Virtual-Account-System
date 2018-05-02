@@ -3,14 +3,15 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 public interface VasInterface {
-    int agencyLogin(String agency_name,String agency_passwd);//密码已SHA256
     int userLogin(String user_name,String user_passwd);
-    int userRegister(String user_name,String user_passwd);
-    boolean userPasswdChanged(int user_id,String old_passwd,String new_passwd);
+    int agencyLogin(String agency_name,String agency_passwd);
+    int userRegister(String user_name,String user_passwd,String user_realname,String user_tel,String user_email,String user_identity,int under_agency_id);
+    int userRegister(String user_name,String user_passwd,String user_realname,String user_tel,String user_email,String user_identity,String under_agency_name);
+    boolean userPasswdChanging(int user_id,String old_passwd,String new_passwd);
     List<Map<String,String>> agencyInformation(int agency_id);
     List<Map<Integer,Integer>> agencyAllUser(int agency_id);
     List<Map<String,String>> userInformation(int user_id);
-    int freezeUnfreeze(int user_id,boolean if_unfreeze);
+    int freezeUnfreeze(int user_id,boolean if_freeze);
     boolean foundPasswd(String user_name,String user_identity,String new_passwd);
     List<Map<Integer,String>> agencyTradeInformation(int agency_id, String start_date, String end_date, int trade_type);
     List<Map<Integer,String>> userTradeInformation(int user_id,String start_date,String end_date,int trade_type);
