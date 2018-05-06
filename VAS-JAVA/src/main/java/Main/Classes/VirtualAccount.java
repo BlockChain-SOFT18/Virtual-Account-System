@@ -13,132 +13,8 @@ import java.sql.ResultSetMetaData;
 import java.util.*;
 
 import org.apache.commons.collections.map.CaseInsensitiveMap;
-public class VirtualAccount implements Main.Interfaces.VasInterface{
-    private DruidPooledConnection connectdb(){
-        ApplicationContext context=new ClassPathXmlApplicationContext("springconfig.xml");
-        DruidDataSource source=(DruidDataSource) context.getBean("dataSource");
-        try {
-            System.out.println("Connected");
-            return source.getConnection();
-        }catch(Exception e){
-            e.printStackTrace();
-            return null;
-        }
-    }
-    private boolean closedb(DruidPooledConnection dbconnection){
-        try{
-            dbconnection.close();
-            System.out.println("Closed");
-            return true;
-        }catch(Exception e){
-            e.printStackTrace();
-            return false;
-        }
-    }
-    private int getResult(ResultSet result,String column,DruidPooledConnection connection)throws Exception{
-        if(result.next()){
-            result.first();
-            int returnint=result.getInt(column);
-            closedb(connection);
-            return returnint;
-        }else{
-            closedb(connection);
-            return -1;
-        }
-    }
-    private int checkAgencyExists(int agency_id) throws Exception{
-        String sql="select * from agencyinformation where agencyid=?";
-        DruidPooledConnection connection=connectdb();
-        PreparedStatement statement = connection.prepareStatement(sql);
-        statement.setInt(1,agency_id);
-        ResultSet result=statement.executeQuery();
-        return getResult(result,"agencyID",connection);
-    }
-    private int checkAgencyExists(String agency_name) throws Exception{
-        String sql="select * from agencyinformation where agencyname=?";
-        DruidPooledConnection connection=connectdb();
-        PreparedStatement statement = connection.prepareStatement(sql);
-        statement.setString(1,agency_name);
-        ResultSet result=statement.executeQuery();
-        return getResult(result,"agencyID",connection);
-    }
-    private int checkUserExists(int user_id) throws Exception{
-        String sql="select * from userinformation where userid=?";
-        DruidPooledConnection connection=connectdb();
-        PreparedStatement statement = connection.prepareStatement(sql);
-        statement.setInt(1,user_id);
-        ResultSet result=statement.executeQuery();
-        return getResult(result,"userID",connection);
-    }
-    private int checkUserExists(String user_name) throws Exception{
-        String sql="select * from userinformation where username=?";
-        DruidPooledConnection connection=connectdb();
-        PreparedStatement statement = connection.prepareStatement(sql);
-        statement.setString(1,user_name);
-        ResultSet result=statement.executeQuery();
-        return getResult(result,"userID",connection);
-    }
-    private int checkUserAgencyDuplicate(String user_identity,int agency)throws Exception{
-        //只检查是否重复，不判断agency的存在性（即外键检查）
-        String sql="select * from userinformation where useridentity=? and agency=?";
-        DruidPooledConnection connection=connectdb();
-        PreparedStatement statement=connection.prepareStatement(sql);
-        statement.setString(1,user_identity);
-        statement.setInt(2,agency);
-        ResultSet result=statement.executeQuery();
-        return getResult(result,"userID",connection);
-    }
-    private int checkUserPasswd(String user_name,String passwd) throws Exception{
-        String sql="select * from userinformation where username=? and userpasswd=?";
-        DruidPooledConnection connection=connectdb();
-        PreparedStatement statement=connection.prepareStatement(sql);
-        statement.setString(1,user_name);
-        statement.setString(2,passwd);
-        ResultSet result=statement.executeQuery();
-        return getResult(result,"userID",connection);
-    }
-    private int checkUserPasswd(int user_id,String passwd) throws Exception{
-        String sql="select * from userinformation where userid=? and userpasswd=?";
-        DruidPooledConnection connection=connectdb();
-        PreparedStatement statement=connection.prepareStatement(sql);
-        statement.setInt(1,user_id);
-        statement.setString(2,passwd);
-        ResultSet result=statement.executeQuery();
-        return getResult(result,"userID",connection);
-    }
-    private int checkAgencyPasswd(String agency_name,String passwd) throws Exception{
-        String sql="select * from agencyinformation where agencyname=? and agencypasswd=?";
-        DruidPooledConnection connection=connectdb();
-        PreparedStatement statement=connection.prepareStatement(sql);
-        statement.setString(1,agency_name);
-        statement.setString(2,passwd);
-        ResultSet result=statement.executeQuery();
-        return getResult(result,"agencyID",connection);
-    }
-    private int checkAgencyPasswd(int agency_id,String passwd) throws Exception{
-        String sql="select * from agencyinformation where agencyid=? and agencypasswd=?";
-        DruidPooledConnection connection=connectdb();
-        PreparedStatement statement=connection.prepareStatement(sql);
-        statement.setInt(1,agency_id);
-        statement.setString(2,passwd);
-        ResultSet result=statement.executeQuery();
-        return getResult(result,"agencyID",connection);
-    }
-    private double getUserBalance(int user_id) throws Exception{
-        if(checkUserExists(user_id)==-1){
-            return -1;
-        }else{
-            String sql="select availablebalance from userinformation where userid=?";
-            DruidPooledConnection connection=connectdb();
-            PreparedStatement statement=connection.prepareStatement(sql);
-            statement.setInt(1,user_id);
-            ResultSet result=statement.executeQuery();
-            result.first();
-            double returndata=result.getDouble("availableBalance");
-            closedb(connection);
-            return returndata;
-        }
-    }
+public class VirtualAccount extends Sql implements Main.Interfaces.VasInterface{
+
     public int userLogin(String user_name,String user_passwd)
     {
         try {
@@ -172,18 +48,7 @@ public class VirtualAccount implements Main.Interfaces.VasInterface{
                 return -1;
             }
             //Nothing Wrong
-            String sql="insert into userinformation(username,userpasswd,userrealname,usertel,useremail,useridentity,agency) values(?,?,?,?,?,?,?);";
-            DruidPooledConnection connection=connectdb();
-            PreparedStatement statement=connection.prepareStatement(sql);
-            statement.setString(1,user_name);
-            statement.setString(2,user_passwd);
-            statement.setString(3,user_realname);
-            statement.setString(4,user_tel);
-            statement.setString(5,user_email);
-            statement.setString(6,user_identity);
-            statement.setInt(7,under_agency_id);
-            statement.executeUpdate();
-            closedb(connection);
+            userInsert(user_name,user_passwd,user_realname,user_tel,user_email,user_identity,under_agency_id);
             return checkUserExists(user_name);
         }catch(Exception e){
             e.printStackTrace();
@@ -212,13 +77,7 @@ public class VirtualAccount implements Main.Interfaces.VasInterface{
                 //not Exists
                 return false;
             }
-            String sql="update userinformation set userpasswd=? where userid=?";
-            DruidPooledConnection connection=connectdb();
-            PreparedStatement statement=connection.prepareStatement(sql);
-            statement.setString(1,new_passwd);
-            statement.setInt(2,user_id);
-            statement.executeUpdate();
-            closedb(connection);
+            updatePasswd(user_id,new_passwd);
             if(checkUserPasswd(user_id,new_passwd)!=-1){
                 return true;
             }else{
@@ -235,14 +94,7 @@ public class VirtualAccount implements Main.Interfaces.VasInterface{
             if(checkAgencyExists(agency_id)==-1){
                 return null;
             }else{
-                String sql="select * from agencyinformation where agencyid=?";
-                DruidPooledConnection connection= connectdb();
-                PreparedStatement statement=connection.prepareStatement(sql);
-                statement.setInt(1,agency_id);
-                ResultSet result=statement.executeQuery();
-                //
-                assert(result.next());
-                assert(!result.next());
+                ResultSet result=getAgencyInformation(agency_id);
                 result.first();
                 ResultSetMetaData metadata=result.getMetaData();
                 Map<String,String> temp_map=new CaseInsensitiveMap();
@@ -256,7 +108,6 @@ public class VirtualAccount implements Main.Interfaces.VasInterface{
                     }
                 }
                 return_list.add(temp_map);
-                closedb(connection);
                 return return_list;
             }
         }catch(Exception e){
@@ -273,11 +124,8 @@ public class VirtualAccount implements Main.Interfaces.VasInterface{
             if(checkAgencyExists(agency_id)==-1){
                 return null;
             }
-            String sql="select userid from userinformation where agency=?";
-            DruidPooledConnection connection=connectdb();
-            PreparedStatement statement=connection.prepareStatement(sql);
-            statement.setInt(1,agency_id);
-            ResultSet result=statement.executeQuery();
+
+            ResultSet result=getAgencyUsers(agency_id);
             if(!result.next()) return null;
             result.beforeFirst();
             while(result.next()){
@@ -287,7 +135,6 @@ public class VirtualAccount implements Main.Interfaces.VasInterface{
                 list.add(map);
                 i++;
             }
-            closedb(connection);
             return list;
         }catch(Exception e){
             e.printStackTrace();
@@ -302,14 +149,7 @@ public class VirtualAccount implements Main.Interfaces.VasInterface{
         list.clear();
         try{
             if(checkUserExists(user_id)==-1) return null;
-            String sql="select * from userinformation where userid=?";
-            DruidPooledConnection connection=connectdb();
-            PreparedStatement statement=connection.prepareStatement(sql);
-            statement.setInt(1,user_id);
-            ResultSet result=statement.executeQuery();
-            //
-            assert(result.next());
-            assert(!result.next());
+            ResultSet result=getUserInformation(user_id);
             result.first();
             //
             ResultSetMetaData metaData=result.getMetaData();
@@ -318,7 +158,6 @@ public class VirtualAccount implements Main.Interfaces.VasInterface{
                 map.put(metaData.getColumnName(i),result.getObject(i).toString());
             }
             list.add(map);
-            closedb(connection);
             return list;
         }catch(Exception e){
             e.printStackTrace();
@@ -331,13 +170,7 @@ public class VirtualAccount implements Main.Interfaces.VasInterface{
             if (checkUserExists(user_id) == -1) {
                 return 0;
             }
-            String sql="update userinformation set ifFrozen=? where userid=?";
-            DruidPooledConnection connection=connectdb();
-            PreparedStatement statement=connection.prepareStatement(sql);
-            statement.setBoolean(1,if_freeze);
-            statement.setInt(2,user_id);
-            statement.executeUpdate();
-            closedb(connection);
+            updateFrozen(user_id,if_freeze);
             if(Boolean.parseBoolean(userInformation(user_id).get(0).get("iffrozen"))){
                 return 1;
             }else{
@@ -351,24 +184,13 @@ public class VirtualAccount implements Main.Interfaces.VasInterface{
     public boolean foundPasswd(String user_name,String user_identity,String new_passwd)
     {
         try {
-            String sql = "select * from userinformation where username=? and useridentity=?";
-            DruidPooledConnection connection=connectdb();
-            PreparedStatement statement=connection.prepareStatement(sql);
-            statement.setString(1,user_name);
-            statement.setString(2,user_identity);
-            if(statement.executeQuery().next()){
-                statement.close();
-                sql="update userinformation set userpasswd=? where username=?";
-                statement=connection.prepareStatement(sql);
-                statement.setString(1,new_passwd);
-                statement.setString(2,user_name);
-                statement.executeUpdate();
+            if(getUserIdentity(user_name,user_identity).next()){
+                updatePasswd(checkUserExists(user_name),new_passwd);
                 if(checkUserPasswd(user_name,new_passwd)!=-1)
                     return true;
                 else
                     return false;
             }else{
-                closedb(connection);
                 return false;
             }
         }catch(Exception e){
@@ -397,14 +219,8 @@ public class VirtualAccount implements Main.Interfaces.VasInterface{
         if(amount<0) return false;
         try {
             if (checkUserExists(user_id) == -1) return false;
-            String sql="update userinformation set availablebalance=availablebalance+? where userid=?";
-            DruidPooledConnection connection=connectdb();
-            PreparedStatement statement=connection.prepareStatement(sql);
-            statement.setDouble(1,amount);
-            statement.setInt(2,user_id);
-            statement.executeUpdate();
+            addBalance(user_id,amount);
             //等接口
-            closedb(connection);
             return true;
         }catch(Exception e){
             e.printStackTrace();
@@ -417,14 +233,8 @@ public class VirtualAccount implements Main.Interfaces.VasInterface{
         try{
             if(checkUserExists(user_id)==-1) return false;
             if(getUserBalance(user_id)<amount) return false;
-            String sql="update userinformation set availablebalance=availablebalance-? where userid=?";
-            DruidPooledConnection connection=connectdb();
-            PreparedStatement statement=connection.prepareStatement(sql);
-            statement.setDouble(1,amount);
-            statement.setInt(2,user_id);
-            statement.executeUpdate();
+            minusBalance(user_id,amount);
             //等接口
-            closedb(connection);
             return true;
         }catch(Exception e){
             e.printStackTrace();
