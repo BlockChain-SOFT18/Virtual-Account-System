@@ -2,12 +2,16 @@ package Main.Classes;
 
 import com.alibaba.druid.pool.DruidDataSource;
 import com.alibaba.druid.pool.DruidPooledConnection;
+import org.apache.commons.collections.map.CaseInsensitiveMap;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 public class Sql {
     protected DruidPooledConnection connectdb(){
@@ -158,29 +162,69 @@ public class Sql {
         statement.executeUpdate();
         closedb(connection);
     }
-    protected ResultSet getAgencyInformation(int agency_id)throws Exception{
+    protected List<Map<String,String>> getAgencyInformation(int agency_id)throws Exception{
         String sql="select * from agencyinformation where agencyid=?";
         DruidPooledConnection connection= connectdb();
         PreparedStatement statement=connection.prepareStatement(sql);
         statement.setInt(1,agency_id);
         ResultSet result=statement.executeQuery();
-        return result;
+        result.first();
+        ResultSetMetaData metadata=result.getMetaData();
+        Map<String,String> temp_map=new CaseInsensitiveMap();
+        List<Map<String,String>> return_list=new ArrayList<Map<String, String>>();
+        return_list.clear();
+        temp_map.clear();
+        for(int i=1;i<=metadata.getColumnCount();i++){
+            //从1开始是不是很SB
+            if(!metadata.getColumnName(i).toString().equalsIgnoreCase("agencyPasswd")) {
+                temp_map.put(metadata.getColumnName(i).toString(), result.getObject(i).toString());
+            }
+        }
+        return_list.add(temp_map);
+        closedb(connection);
+        return return_list;
     }
-    protected ResultSet getAgencyUsers(int agency_id)throws Exception{
+    protected List<Map<Integer,Integer>> getAgencyUsers(int agency_id)throws Exception{
+        int i=0;
+        List<Map<Integer,Integer>> list=new ArrayList<Map<Integer, Integer>>();
+        list.clear();
         String sql="select userid from userinformation where agency=?";
         DruidPooledConnection connection=connectdb();
         PreparedStatement statement=connection.prepareStatement(sql);
         statement.setInt(1,agency_id);
         ResultSet result=statement.executeQuery();
-        return result;
+        if(!result.next()) return null;
+        result.beforeFirst();
+        while(result.next()){
+            Map<Integer,Integer> map=new CaseInsensitiveMap();
+            map.clear();
+            map.put(i,Integer.parseInt(result.getObject(1).toString()));
+            list.add(map);
+            i++;
+        }
+        closedb(connection);
+        return list;
     }
-    protected ResultSet getUserInformation(int user_id)throws Exception{
+    protected List<Map<String,String>> getUserInformation(int user_id)throws Exception{
+        Map<String,String> map=new CaseInsensitiveMap();
+        map.clear();
+        List<Map<String,String>> list=new ArrayList<Map<String, String>>();
+        list.clear();
         String sql="select * from userinformation where userid=?";
         DruidPooledConnection connection=connectdb();
         PreparedStatement statement=connection.prepareStatement(sql);
         statement.setInt(1,user_id);
         ResultSet result=statement.executeQuery();
-        return result;
+        result.first();
+        //
+        ResultSetMetaData metaData=result.getMetaData();
+        for(int i=1;i<=metaData.getColumnCount();i++){
+            if(metaData.getColumnName(i).equalsIgnoreCase("userpasswd")) continue;
+            map.put(metaData.getColumnName(i),result.getObject(i).toString());
+        }
+        list.add(map);
+        closedb(connection);
+        return list;
     }
     protected void updateFrozen(int user_id,boolean if_freeze)throws Exception{
         String sql="update userinformation set ifFrozen=? where userid=?";
@@ -191,13 +235,13 @@ public class Sql {
         statement.executeUpdate();
         closedb(connection);
     }
-    protected ResultSet getUserIdentity(String user_name,String user_identity)throws Exception{
+    protected boolean checkUserExists(String user_name,String user_identity)throws Exception{
         String sql = "select * from userinformation where username=? and useridentity=?";
         DruidPooledConnection connection=connectdb();
         PreparedStatement statement=connection.prepareStatement(sql);
         statement.setString(1,user_name);
         statement.setString(2,user_identity);
-        return statement.executeQuery();
+        return statement.executeQuery().next();
     }
     protected void addBalance(int user_id,double amount)throws Exception{
         String sql="update userinformation set availablebalance=availablebalance+? where userid=?";

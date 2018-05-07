@@ -94,21 +94,7 @@ public class VirtualAccount extends Sql implements Main.Interfaces.VasInterface{
             if(checkAgencyExists(agency_id)==-1){
                 return null;
             }else{
-                ResultSet result=getAgencyInformation(agency_id);
-                result.first();
-                ResultSetMetaData metadata=result.getMetaData();
-                Map<String,String> temp_map=new CaseInsensitiveMap();
-                List<Map<String,String>> return_list=new ArrayList<Map<String, String>>();
-                return_list.clear();
-                temp_map.clear();
-                for(int i=1;i<=metadata.getColumnCount();i++){
-                    //从1开始是不是很SB
-                    if(!metadata.getColumnName(i).toString().equalsIgnoreCase("agencyPasswd")) {
-                        temp_map.put(metadata.getColumnName(i).toString(), result.getObject(i).toString());
-                    }
-                }
-                return_list.add(temp_map);
-                return return_list;
+                return getAgencyInformation(agency_id);
             }
         }catch(Exception e){
             e.printStackTrace();
@@ -117,25 +103,11 @@ public class VirtualAccount extends Sql implements Main.Interfaces.VasInterface{
     }
     public List<Map<Integer,Integer>> agencyAllUser(int agency_id)
     {
-        int i=0;
-        List<Map<Integer,Integer>> list=new ArrayList<Map<Integer, Integer>>();
-        list.clear();
         try{
             if(checkAgencyExists(agency_id)==-1){
                 return null;
             }
-
-            ResultSet result=getAgencyUsers(agency_id);
-            if(!result.next()) return null;
-            result.beforeFirst();
-            while(result.next()){
-                Map<Integer,Integer> map=new CaseInsensitiveMap();
-                map.clear();
-                map.put(i,Integer.parseInt(result.getObject(1).toString()));
-                list.add(map);
-                i++;
-            }
-            return list;
+            return getAgencyUsers(agency_id);
         }catch(Exception e){
             e.printStackTrace();
             return null;
@@ -143,22 +115,9 @@ public class VirtualAccount extends Sql implements Main.Interfaces.VasInterface{
     }
     public List<Map<String,String>> userInformation(int user_id)
     {
-        Map<String,String> map=new CaseInsensitiveMap();
-        map.clear();
-        List<Map<String,String>> list=new ArrayList<Map<String, String>>();
-        list.clear();
         try{
             if(checkUserExists(user_id)==-1) return null;
-            ResultSet result=getUserInformation(user_id);
-            result.first();
-            //
-            ResultSetMetaData metaData=result.getMetaData();
-            for(int i=1;i<=metaData.getColumnCount();i++){
-                if(metaData.getColumnName(i).equalsIgnoreCase("userpasswd")) continue;
-                map.put(metaData.getColumnName(i),result.getObject(i).toString());
-            }
-            list.add(map);
-            return list;
+            return getUserInformation(user_id);
         }catch(Exception e){
             e.printStackTrace();
             return null;
@@ -184,7 +143,7 @@ public class VirtualAccount extends Sql implements Main.Interfaces.VasInterface{
     public boolean foundPasswd(String user_name,String user_identity,String new_passwd)
     {
         try {
-            if(getUserIdentity(user_name,user_identity).next()){
+            if(checkUserExists(user_name,user_identity)){
                 updatePasswd(checkUserExists(user_name),new_passwd);
                 if(checkUserPasswd(user_name,new_passwd)!=-1)
                     return true;
@@ -275,7 +234,7 @@ public class VirtualAccount extends Sql implements Main.Interfaces.VasInterface{
     }
     @Test
     public void test_foundPasswd(){
-        System.out.println(foundPasswd("a","dsa","e4fa7ccc32184b2ac0f1b3cf1f46aa7b34f90f61ae425a7d6507038eaf1ab38f"));
+        System.out.println(foundPasswd("a","fsdfsf","e4fa7ccc32184b2ac0f1b3cf1f46aa7b34f90f61ae425a7d6507038eaf1ab38f"));
     }
     @Test
     public void test_DrawMoney(){
