@@ -12,6 +12,10 @@ File Encoding         : 65001
 
 Date: 2018-07-27 15:45:23
 */
+DROP DATABASE IF EXISTS `vast`;
+CREATE DATABASE `vast` DEFAULT CHARSET utf8 COLLATE utf8_general_ci;
+
+USE `vast`;
 
 SET FOREIGN_KEY_CHECKS=0;
 
@@ -49,7 +53,7 @@ CREATE TABLE `platforminformation` (
 -- ----------------------------
 -- Records of platforminformation
 -- ----------------------------
-INSERT INTO `platforminformation` VALUES ('1', '0.00', '2', '0.00');
+INSERT INTO `platforminformation` VALUES ('1', '0.00', '2', '1.00');
 
 -- ----------------------------
 -- Table structure for transactioninformation
@@ -58,7 +62,7 @@ DROP TABLE IF EXISTS `transactioninformation`;
 CREATE TABLE `transactioninformation` (
   `transactionID` varchar(255) NOT NULL,
   `transactionType` int(11) NOT NULL,
-  `TransactionDate` datetime NOT NULL,
+  `transactionDate` datetime NOT NULL,
   `payerAgencyID` int(11) DEFAULT NULL,
   `payerUserID` int(11) DEFAULT NULL,
   `receiverAgencyID` int(11) DEFAULT NULL,
@@ -84,7 +88,7 @@ CREATE TABLE `transactioninformation` (
 -- ----------------------------
 DROP TABLE IF EXISTS `userinformation`;
 CREATE TABLE `userinformation` (
-  `UserID` int(11) NOT NULL AUTO_INCREMENT,
+  `userID` int(11) NOT NULL AUTO_INCREMENT,
   `userName` varchar(128) NOT NULL,
   `userPasswd` char(64) NOT NULL,
   `userRealName` varchar(128) NOT NULL,
@@ -105,3 +109,14 @@ CREATE TABLE `userinformation` (
 -- ----------------------------
 -- Records of userinformation
 -- ----------------------------
+
+INSERT INTO `agencyinformation` VALUES (1, "abc",
+                                        "0bfe935e70c321c7ca3afc75ce0d0ca2f98b5422e008bb31c00c6d7f1f1c0ad8",  "lw", "456256232", "a@b.com");
+INSERT INTO `userinformation` VALUES (3, "xyz",
+  "0bfe935e70c321c7ca3afc75ce0d0ca2f98b5422e008bb31c00c6d7f1f1c0ad6",  "Li", "00000001", "360@baidu.com", "1234567890", 1, 2.00, 0.00, 0);
+
+INSERT INTO `userinformation` VALUES (4, "ac",
+  "0bfe935e70c321c7ca3afc75ce0d0ca2f98b5422e008bb31c00c6d7f1f1c0ad7",  "dsx", "45621232", "a@b.com", "5623412586", 1, 5.00, 0.00, 1);
+
+INSERT INTO `userinformation` VALUES (5, "xz",
+  "0bfe935e70c321c7ca3afc75ce0d0ca2f98b5422e008bb31c00c6d7f1f1c0ad0",  "Lin", "00000002", "360@qq.com", "123456780", 1, 10.00, 0.00, 0);
